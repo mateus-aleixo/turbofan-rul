@@ -76,9 +76,14 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = aws_ecr_repository.api.arn
       },
       {
-        Sid      = "UpdateFunction"
-        Effect   = "Allow"
-        Action   = ["lambda:UpdateFunctionCode", "lambda:GetFunction"]
+        Sid    = "UpdateFunction"
+        Effect = "Allow"
+        # GetFunctionConfiguration backs `aws lambda wait function-updated`
+        Action = [
+          "lambda:UpdateFunctionCode",
+          "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration",
+        ]
         Resource = aws_lambda_function.api.arn
       },
     ]
