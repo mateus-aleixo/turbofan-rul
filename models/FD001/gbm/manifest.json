@@ -1,0 +1,77 @@
+{
+  "subset": "FD001",
+  "model": "gbm",
+  "data": {
+    "subset": "FD001",
+    "window": 30,
+    "rul_cap": 125,
+    "val_frac": 0.15,
+    "cal_frac": 0.15,
+    "seed": 42
+  },
+  "train": {
+    "model": "gbm",
+    "epochs": 100,
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "patience": 15,
+    "hidden": 128,
+    "layers": 2,
+    "dropout": 0.25,
+    "heads": 4,
+    "ff_mult": 4,
+    "pinball_weight": 1.0,
+    "seed": 42
+  },
+  "quantiles": [
+    0.025,
+    0.05,
+    0.1,
+    0.5,
+    0.9,
+    0.95,
+    0.975
+  ],
+  "coverages": [
+    80,
+    90,
+    95
+  ],
+  "n_features": 15,
+  "n_regimes": 1,
+  "feature_names": [
+    "s_02",
+    "s_03",
+    "s_04",
+    "s_06",
+    "s_07",
+    "s_08",
+    "s_09",
+    "s_11",
+    "s_12",
+    "s_13",
+    "s_14",
+    "s_15",
+    "s_17",
+    "s_20",
+    "s_21"
+  ],
+  "sizes": {
+    "val": 2399,
+    "cal": 2454,
+    "train": 12878,
+    "test": 100
+  },
+  "val_rmse": 12.872,
+  "test": {
+    "rmse": 12.117,
+    "nasa_score": 230.6,
+    "mae": 9.223,
+    "bias": 2.969
+  },
+  "epochs_ran": 0,
+  "runtime_s": 10.0,
+  "device": "cuda",
+  "platform": "Windows-11-10.0.26200-SP0"
+}
