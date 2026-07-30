@@ -1,0 +1,120 @@
+{
+  "method": "cqr",
+  "n": 100,
+  "coverages": {
+    "80": {
+      "marginal": {
+        "coverage": 0.87,
+        "width": 32.93
+      },
+      "regime": {
+        "coverage": 0.87,
+        "width": 32.93,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.87,
+            "width": 32.93
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.89,
+        "width": 32.99,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 0.9048,
+            "width": 11.85
+          },
+          "warning": {
+            "n": 21,
+            "coverage": 0.8571,
+            "width": 31.96
+          },
+          "healthy": {
+            "n": 58,
+            "coverage": 0.8966,
+            "width": 41.01
+          }
+        }
+      }
+    },
+    "90": {
+      "marginal": {
+        "coverage": 0.94,
+        "width": 43.93
+      },
+      "regime": {
+        "coverage": 0.94,
+        "width": 43.93,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.94,
+            "width": 43.93
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.94,
+        "width": 44.05,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 0.9524,
+            "width": 18.94
+          },
+          "warning": {
+            "n": 21,
+            "coverage": 0.8571,
+            "width": 42.47
+          },
+          "healthy": {
+            "n": 58,
+            "coverage": 0.9655,
+            "width": 53.72
+          }
+        }
+      }
+    },
+    "95": {
+      "marginal": {
+        "coverage": 0.97,
+        "width": 60.29
+      },
+      "regime": {
+        "coverage": 0.97,
+        "width": 60.29,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.97,
+            "width": 60.29
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.96,
+        "width": 60.52,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 0.9524,
+            "width": 34.84
+          },
+          "warning": {
+            "n": 21,
+            "coverage": 0.9524,
+            "width": 66.46
+          },
+          "healthy": {
+            "n": 58,
+            "coverage": 0.9655,
+            "width": 67.67
+          }
+        }
+      }
+    }
+  }
+}

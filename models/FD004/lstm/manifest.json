@@ -1,0 +1,79 @@
+{
+  "subset": "FD004",
+  "model": "lstm",
+  "data": {
+    "subset": "FD004",
+    "window": 30,
+    "rul_cap": 125,
+    "val_frac": 0.15,
+    "cal_frac": 0.15,
+    "seed": 42
+  },
+  "train": {
+    "model": "lstm",
+    "epochs": 100,
+    "batch_size": 256,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "patience": 15,
+    "hidden": 128,
+    "layers": 2,
+    "dropout": 0.25,
+    "heads": 4,
+    "ff_mult": 4,
+    "pinball_weight": 1.0,
+    "seed": 42
+  },
+  "quantiles": [
+    0.025,
+    0.05,
+    0.1,
+    0.5,
+    0.9,
+    0.95,
+    0.975
+  ],
+  "coverages": [
+    80,
+    90,
+    95
+  ],
+  "n_features": 17,
+  "n_regimes": 6,
+  "feature_names": [
+    "s_02",
+    "s_03",
+    "s_04",
+    "s_06",
+    "s_07",
+    "s_08",
+    "s_09",
+    "s_10",
+    "s_11",
+    "s_12",
+    "s_13",
+    "s_14",
+    "s_15",
+    "s_16",
+    "s_17",
+    "s_20",
+    "s_21"
+  ],
+  "sizes": {
+    "val": 8434,
+    "cal": 8629,
+    "train": 36965,
+    "test": 248
+  },
+  "val_rmse": 16.323,
+  "test": {
+    "rmse": 15.006,
+    "nasa_score": 1333.9,
+    "mae": 10.382,
+    "bias": 2.167
+  },
+  "epochs_ran": 22,
+  "runtime_s": 28.1,
+  "device": "cuda",
+  "platform": "Windows-11-10.0.26200-SP0"
+}

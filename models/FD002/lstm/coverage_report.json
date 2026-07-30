@@ -1,0 +1,195 @@
+{
+  "method": "cqr",
+  "n": 259,
+  "coverages": {
+    "80": {
+      "marginal": {
+        "coverage": 0.8263,
+        "width": 35.5
+      },
+      "regime": {
+        "coverage": 0.834,
+        "width": 35.49,
+        "groups": {
+          "regime_0": {
+            "n": 36,
+            "coverage": 0.8333,
+            "width": 39.16
+          },
+          "regime_1": {
+            "n": 41,
+            "coverage": 0.8049,
+            "width": 33.02
+          },
+          "regime_2": {
+            "n": 42,
+            "coverage": 0.9048,
+            "width": 37.02
+          },
+          "regime_3": {
+            "n": 32,
+            "coverage": 0.8438,
+            "width": 35.24
+          },
+          "regime_4": {
+            "n": 39,
+            "coverage": 0.8718,
+            "width": 38.0
+          },
+          "regime_5": {
+            "n": 69,
+            "coverage": 0.7826,
+            "width": 32.79
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.8417,
+        "width": 32.24,
+        "groups": {
+          "critical": {
+            "n": 59,
+            "coverage": 0.8814,
+            "width": 17.47
+          },
+          "warning": {
+            "n": 69,
+            "coverage": 0.8841,
+            "width": 37.4
+          },
+          "healthy": {
+            "n": 131,
+            "coverage": 0.8015,
+            "width": 36.18
+          }
+        }
+      }
+    },
+    "90": {
+      "marginal": {
+        "coverage": 0.9344,
+        "width": 44.42
+      },
+      "regime": {
+        "coverage": 0.9266,
+        "width": 44.41,
+        "groups": {
+          "regime_0": {
+            "n": 36,
+            "coverage": 0.9167,
+            "width": 48.27
+          },
+          "regime_1": {
+            "n": 41,
+            "coverage": 0.9268,
+            "width": 42.25
+          },
+          "regime_2": {
+            "n": 42,
+            "coverage": 0.9762,
+            "width": 45.77
+          },
+          "regime_3": {
+            "n": 32,
+            "coverage": 0.9062,
+            "width": 44.27
+          },
+          "regime_4": {
+            "n": 39,
+            "coverage": 0.9231,
+            "width": 48.22
+          },
+          "regime_5": {
+            "n": 69,
+            "coverage": 0.913,
+            "width": 40.75
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.9305,
+        "width": 42.68,
+        "groups": {
+          "critical": {
+            "n": 59,
+            "coverage": 0.9492,
+            "width": 21.53
+          },
+          "warning": {
+            "n": 69,
+            "coverage": 0.9565,
+            "width": 51.43
+          },
+          "healthy": {
+            "n": 131,
+            "coverage": 0.9084,
+            "width": 47.6
+          }
+        }
+      }
+    },
+    "95": {
+      "marginal": {
+        "coverage": 0.9768,
+        "width": 51.69
+      },
+      "regime": {
+        "coverage": 0.973,
+        "width": 52.03,
+        "groups": {
+          "regime_0": {
+            "n": 36,
+            "coverage": 0.9722,
+            "width": 56.08
+          },
+          "regime_1": {
+            "n": 41,
+            "coverage": 0.9512,
+            "width": 49.04
+          },
+          "regime_2": {
+            "n": 42,
+            "coverage": 1.0,
+            "width": 54.34
+          },
+          "regime_3": {
+            "n": 32,
+            "coverage": 0.9375,
+            "width": 51.7
+          },
+          "regime_4": {
+            "n": 39,
+            "coverage": 0.9744,
+            "width": 55.85
+          },
+          "regime_5": {
+            "n": 69,
+            "coverage": 0.9855,
+            "width": 48.29
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.973,
+        "width": 54.28,
+        "groups": {
+          "critical": {
+            "n": 59,
+            "coverage": 1.0,
+            "width": 23.86
+          },
+          "warning": {
+            "n": 69,
+            "coverage": 0.971,
+            "width": 75.99
+          },
+          "healthy": {
+            "n": 131,
+            "coverage": 0.9618,
+            "width": 56.55
+          }
+        }
+      }
+    }
+  }
+}

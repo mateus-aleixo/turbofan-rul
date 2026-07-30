@@ -1,0 +1,120 @@
+{
+  "method": "cqr",
+  "n": 100,
+  "coverages": {
+    "80": {
+      "marginal": {
+        "coverage": 0.87,
+        "width": 34.09
+      },
+      "regime": {
+        "coverage": 0.87,
+        "width": 34.09,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.87,
+            "width": 34.09
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.87,
+        "width": 32.78,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 0.9524,
+            "width": 14.97
+          },
+          "warning": {
+            "n": 22,
+            "coverage": 0.8636,
+            "width": 36.89
+          },
+          "healthy": {
+            "n": 57,
+            "coverage": 0.8421,
+            "width": 37.76
+          }
+        }
+      }
+    },
+    "90": {
+      "marginal": {
+        "coverage": 0.95,
+        "width": 41.5
+      },
+      "regime": {
+        "coverage": 0.95,
+        "width": 41.5,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.95,
+            "width": 41.5
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.93,
+        "width": 40.04,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 0.9524,
+            "width": 19.03
+          },
+          "warning": {
+            "n": 22,
+            "coverage": 0.8636,
+            "width": 45.73
+          },
+          "healthy": {
+            "n": 57,
+            "coverage": 0.9474,
+            "width": 45.58
+          }
+        }
+      }
+    },
+    "95": {
+      "marginal": {
+        "coverage": 0.95,
+        "width": 48.02
+      },
+      "regime": {
+        "coverage": 0.95,
+        "width": 48.02,
+        "groups": {
+          "regime_0": {
+            "n": 100,
+            "coverage": 0.95,
+            "width": 48.02
+          }
+        }
+      },
+      "band": {
+        "coverage": 0.97,
+        "width": 44.54,
+        "groups": {
+          "critical": {
+            "n": 21,
+            "coverage": 1.0,
+            "width": 21.66
+          },
+          "warning": {
+            "n": 22,
+            "coverage": 0.9091,
+            "width": 51.93
+          },
+          "healthy": {
+            "n": 57,
+            "coverage": 0.9825,
+            "width": 50.13
+          }
+        }
+      }
+    }
+  }
+}
