@@ -6,6 +6,15 @@
 
 data "aws_caller_identity" "current" {}
 
+locals {
+  # "owner/name" + numeric ids -> "owner@oid/name@rid", the identity GitHub
+  # actually presents in the token's sub claim.
+  github_sub_repo = join("/", [
+    "${split("/", var.github_repo)[0]}@${var.github_owner_id}",
+    "${split("/", var.github_repo)[1]}@${var.github_repo_id}",
+  ])
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
@@ -29,9 +38,10 @@ resource "aws_iam_role" "deploy" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
+          # sub format carries pinned numeric ids: repo:owner@id/name@id:ref:...
           "token.actions.githubusercontent.com:sub" = [
-            "repo:${var.github_repo}:ref:refs/heads/main",
-            "repo:${var.github_repo}:ref:refs/tags/*",
+            "repo:${local.github_sub_repo}:ref:refs/heads/main",
+            "repo:${local.github_sub_repo}:ref:refs/tags/*",
           ]
         }
       }

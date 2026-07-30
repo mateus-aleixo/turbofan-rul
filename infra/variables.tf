@@ -16,6 +16,21 @@ variable "github_repo" {
   default     = "mateus-aleixo/conformal-rul"
 }
 
+# GitHub's OIDC sub claim pins numeric account/repo ids (owner@id/repo@id)
+# so a deleted-and-recreated repo of the same name cannot assume the role.
+# Find them: gh api users/<owner> --jq .id / gh api repos/<owner>/<name> --jq .id
+variable "github_owner_id" {
+  description = "Numeric GitHub account id baked into the OIDC sub claim"
+  type        = string
+  default     = "75174997"
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository id baked into the OIDC sub claim"
+  type        = string
+  default     = "1317257398"
+}
+
 variable "image_tag" {
   description = "Image tag the Lambda points at; CI moves the function to new tags"
   type        = string
