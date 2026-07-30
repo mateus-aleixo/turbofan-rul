@@ -93,9 +93,20 @@ terraform destroy -var budget_email=YOU@example.com
 
 ## Troubleshooting
 
-- **`sts:AssumeRoleWithWebIdentity` denied in Actions** — the workflow ran from
-  a branch or fork the trust policy doesn't cover; it trusts `main` and `v*`
-  tags on `mateus-aleixo/conformal-rul` only.
+- **`sts:AssumeRoleWithWebIdentity` denied in Actions** — two causes seen in
+  practice: (a) the workflow ran from a branch or fork the trust policy doesn't
+  cover (it trusts `main` and `v*` tags only); (b) **the sub-claim format** —
+  GitHub pins numeric ids into the token
+  (`repo:owner@id/name@id:ref:...`), so a trust policy written against the
+  classic id-less format matches nothing. The Terraform here builds the
+  id-pinned form from `github_owner_id`/`github_repo_id`; if you fork this,
+  set those to your own ids (`gh api users/<you> --jq .id`,
+  `gh api repos/<you>/<repo> --jq .id`). Debug by dumping the claims:
+  request the token in a step and decode its payload with `jq '{sub, aud}'`.
+- **`lambda wait function-updated` fails with AccessDenied** — the waiter
+  polls `lambda:GetFunctionConfiguration`; a minimal role with only
+  `UpdateFunctionCode`/`GetFunction` breaks exactly there. Already granted
+  here.
 - **Image push denied** — ECR login expired (12 h); rerun the login command.
 - **502 from the API** — almost always the container failed to start; check
   CloudWatch → log group `/aws/lambda/conformal-rul`.

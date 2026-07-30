@@ -13,8 +13,14 @@ healthy machine or fly a failing one.
 
 PyTorch sequence models trained from scratch on the NASA C-MAPSS benchmark,
 wrapped in **conformalized quantile regression** with **Mondrian (per-group)
-calibration**, exported to ONNX and served torch-free by a FastAPI service that
-deploys to **AWS Lambda via Terraform** with OIDC-authenticated GitHub Actions.
+calibration**, exported to ONNX and served torch-free by a FastAPI service
+**running live on AWS Lambda**, provisioned with Terraform and deployed by
+OIDC-authenticated GitHub Actions.
+
+**Live demo**: `https://aao1ufi805.execute-api.eu-west-1.amazonaws.com` —
+try `GET /health`, `GET /models`, or the `POST /predict` example below.
+(Serverless: the first request after idle pays a few seconds of cold start;
+the API is deliberately throttled to 5 req/s.)
 
 ## Results in one table
 
