@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # dev+serve only: the test suite runs against the committed ONNX
+      # registry, so CI never needs torch or lightgbm.
+      - run: pip install -e .[dev,serve]
+      - run: ruff check src tests scripts
+      - run: pytest
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t conformal-rul:ci .
+      - name: smoke test the container
+        run: |
+          docker run -d --name smoke -p 8000:8000 conformal-rul:ci
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8000/health && break
+            sleep 1
+          done
+          python - <<'EOF'
+          import json, urllib.request
+          cycle = {f"setting_{i}": 0.0 for i in (1, 2, 3)}
+          cycle |= {f"s_{i:02d}": 0.5 for i in range(1, 22)}
+          body = json.dumps({"subset": "FD001", "cycles": [cycle] * 35}).encode()
+          req = urllib.request.Request(
+              "http://localhost:8000/predict", body, {"Content-Type": "application/json"}
+          )
+          out = json.load(urllib.request.urlopen(req))
+          assert 0 <= out["rul_cycles"] <= 125, out
+          assert out["interval"]["lower"] <= out["interval"]["upper"], out
+          print("container predict OK:", out["rul_cycles"], out["interval"])
+          EOF
+          docker rm -f smoke

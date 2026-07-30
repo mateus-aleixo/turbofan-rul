@@ -1,0 +1,19 @@
+.git
+.venv
+.github
+.pytest_cache
+.ruff_cache
+__pycache__
+data
+docs
+infra
+mlruns
+notebooks
+scripts
+tests
+checkpoints
+# training artifacts stay out of the serving image
+models/**/model.pt
+models/**/preds.npz
+models/**/coverage_report.json
+*.egg-info

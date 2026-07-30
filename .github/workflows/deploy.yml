@@ -1,0 +1,53 @@
+name: deploy
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC federation — no stored AWS keys
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Repository variables are set once after `terraform apply` (docs/deploy.md);
+    # until then this job skips instead of failing.
+    if: vars.AWS_ROLE_ARN != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: build and push
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/conformal-rul
+        run: |
+          docker build -t "$IMAGE:${GITHUB_SHA::12}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${GITHUB_SHA::12}"
+          docker push "$IMAGE:latest"
+
+      - name: point the function at the new image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/conformal-rul
+        run: |
+          aws lambda update-function-code \
+            --function-name conformal-rul \
+            --image-uri "$IMAGE:${GITHUB_SHA::12}"
+          aws lambda wait function-updated --function-name conformal-rul
+
+      - name: smoke the live endpoint
+        if: vars.API_ENDPOINT != ''
+        run: |
+          for i in $(seq 1 10); do
+            curl -sf "${{ vars.API_ENDPOINT }}/health" && exit 0
+            sleep 3
+          done
+          echo "endpoint did not come up" && exit 1

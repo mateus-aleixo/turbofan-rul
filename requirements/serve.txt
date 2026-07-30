@@ -1,0 +1,11 @@
+# Serving image dependencies — exact pins, torch-free by design.
+# The package itself is installed with --no-deps on top of these, so heavy
+# training-only dependencies (torch, lightgbm, scikit-learn, mlflow) never
+# enter the container.
+fastapi==0.135.3
+uvicorn==0.44.0
+onnxruntime==1.28.0
+mangum==0.21.0
+pydantic==2.12.5
+numpy==2.1.3
+pandas==2.2.3
