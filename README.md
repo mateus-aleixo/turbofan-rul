@@ -22,6 +22,22 @@ try `GET /health`, `GET /models`, or the `POST /predict` example below.
 (Serverless: the first request after idle pays a few seconds of cold start;
 the API is deliberately throttled to 5 req/s.)
 
+### One idea, three modalities
+
+This is the first of a series applying the same discipline — *a prediction without a
+trustworthy confidence statement is not a decision aid* — to different kinds of data:
+
+| repo | modality | the guarantee |
+|---|---|---|
+| **conformal-rul** | sensor sequences | RUL intervals with verified coverage, live on AWS Lambda |
+| [conformal-seg](https://github.com/mateus-aleixo/conformal-seg) | vision | defect masks bounding the missed-defect rate |
+| [conformal-rag](https://github.com/mateus-aleixo/conformal-rag) | language | selective QA that abstains at a calibrated error rate |
+
+Each one is standalone. Read together they make the same argument three times, and
+each surfaces a different limit of the method — `conformal-seg` shows a guarantee
+holding while the output becomes useless, `conformal-rag` shows a stronger model
+making calibration *harder*.
+
 ## Results in one table
 
 Test RMSE (cycles) — full tables, NASA scores and coverage analysis in
