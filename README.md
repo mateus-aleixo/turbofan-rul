@@ -104,10 +104,20 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \
 ```
 
 ```json
-{"rul_cycles": 118.9, "interval": {"lower": 87.5, "upper": 125.0, "coverage": 90},
+{"rul_cycles": 118.9,
+ "interval": {"lower": 87.5, "upper": 125.0,
+              "coverage_nominal": 90, "coverage_measured": 0.89,
+              "mean_width": 36.8, "taxonomy": "band", "n_calibration": 100},
  "risk_band": "healthy", "operating_regime": 0, "subset": "FD001",
  "model": "transformer", "n_cycles_used": 1, "padded": true}
 ```
+
+`coverage_nominal` is what you asked for; `coverage_measured` is what that setting
+achieved on the held-out split. They are not the same number, and the gap is the
+point. The taxonomy matters too: on FD001 at nominal 90, `band` measures 0.89 while
+`marginal` measures 0.82, so a service that returned only the request would hide an
+under-coverage it lets you select. `GET /models` reports the measured figures per
+level without sending any data.
 
 Interactive docs at `localhost:8000/docs`.
 
