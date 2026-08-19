@@ -1,4 +1,4 @@
-# Model card — conformal-rul
+# Model card: conformal-rul
 
 ## What it is
 
@@ -18,7 +18,7 @@ Do not point it at an actual aircraft.
 ## Training data
 
 NASA C-MAPSS turbofan degradation simulation (Saxena, Goebel, Simon &
-Eklund, PHM 2008) — public, downloaded from the NASA PCoE archive by
+Eklund, PHM 2008): public, downloaded from the NASA PCoE archive by
 `conformal_rul.data`. 21 sensor channels + 3 operating settings per cycle;
 709 training engines across four subsets differing in operating regimes
 (1 or 6) and fault modes (1 or 2). Targets use the standard piecewise-linear
@@ -58,7 +58,7 @@ RUL < 30) is 11–19 cycles, 2–3× tighter than for healthy engines.
   costing accuracy near an engine's first cycles.
 - The 125-cycle cap means "healthy" predictions saturate; the model ranks
   urgency, it does not estimate long horizons.
-- Simulated fleet, no sensor faults, no missing data — all cleaner than
+- Simulated fleet, no sensor faults, no missing data: all cleaner than
   reality.
 
 ## Safety framing

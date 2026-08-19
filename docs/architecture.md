@@ -33,7 +33,7 @@ Three artifact rules make this clean:
    Quantile monotonization (sorting columns 1..7) is re-applied at serving
    time, identical to training.
 3. **`best.json` is the deployment pointer.** Model selection (lowest test
-   RMSE among the sequence models) is an artifact, not a config constant —
+   RMSE among the sequence models) is an artifact, not a config constant:
    retraining can change the served architecture without touching code.
 
 ## Request path
@@ -55,7 +55,7 @@ sequenceDiagram
 
 Cold start ≈ container boot + one ONNX session per requested subset (lazy,
 `lru_cache`). The Web Adapter means the same image runs `docker compose up`
-locally — there is no Lambda-only code path to drift.
+locally: there is no Lambda-only code path to drift.
 
 ## Data pipeline invariants
 
@@ -65,10 +65,10 @@ locally — there is no Lambda-only code path to drift.
   normalization and early stopping never see it.
 - **Regime-conditional normalization**: 6 operating regimes (FD002/FD004) are
   found by KMeans on standardized settings at fit time; at transform time
-  regime assignment is nearest-center in numpy — serving carries the centers,
+  regime assignment is nearest-center in numpy: serving carries the centers,
   not scikit-learn.
 - **Variance-rule sensor selection** per subset (15–17 of 21 kept) instead of
-  a hardcoded literature list — the rule travels with the preprocessor.
+  a hardcoded literature list: the rule travels with the preprocessor.
 
 ## CI/CD
 
@@ -82,6 +82,6 @@ flowchart LR
 
 - CI never installs torch: the test suite runs against the committed registry.
 - The deploy job authenticates by OIDC federation (no stored keys) into a role
-  that can push to one ECR repo and update one function — infrastructure
+  that can push to one ECR repo and update one function: infrastructure
   changes remain a local, reviewed `terraform apply` (see
   [deploy.md](deploy.md)).

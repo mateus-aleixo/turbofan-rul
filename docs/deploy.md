@@ -13,7 +13,7 @@ after that every deploy is `git tag && git push --tags`.
 | CloudWatch logs | 5 GB ingest / month | ~0 |
 
 The API stage is throttled (5 req/s, burst 10) and a $5/month budget alarm
-emails at 80 % — worst case is capped twice over.
+emails at 80 %: worst case is capped twice over.
 
 ## 1. Create the account
 
@@ -81,7 +81,7 @@ curl -X POST "$API/predict" -H "Content-Type: application/json" -d @- <<'EOF'
 EOF
 ```
 
-(One cycle is enough — the service left-pads and says so via `"padded": true`.
+(One cycle is enough: the service left-pads and says so via `"padded": true`.
 The first request after idle pays a ~2–4 s cold start; that is Lambda, not the
 model.)
 
@@ -93,9 +93,9 @@ terraform destroy -var budget_email=YOU@example.com
 
 ## Troubleshooting
 
-- **`sts:AssumeRoleWithWebIdentity` denied in Actions** — two causes seen in
+- **`sts:AssumeRoleWithWebIdentity` denied in Actions**: two causes seen in
   practice: (a) the workflow ran from a branch or fork the trust policy doesn't
-  cover (it trusts `main` and `v*` tags only); (b) **the sub-claim format** —
+  cover (it trusts `main` and `v*` tags only); (b) **the sub-claim format**:
   GitHub pins numeric ids into the token
   (`repo:owner@id/name@id:ref:...`), so a trust policy written against the
   classic id-less format matches nothing. The Terraform here builds the
@@ -103,14 +103,14 @@ terraform destroy -var budget_email=YOU@example.com
   set those to your own ids (`gh api users/<you> --jq .id`,
   `gh api repos/<you>/<repo> --jq .id`). Debug by dumping the claims:
   request the token in a step and decode its payload with `jq '{sub, aud}'`.
-- **`lambda wait function-updated` fails with AccessDenied** — the waiter
+- **`lambda wait function-updated` fails with AccessDenied**: the waiter
   polls `lambda:GetFunctionConfiguration`; a minimal role with only
   `UpdateFunctionCode`/`GetFunction` breaks exactly there. Already granted
   here.
-- **Image push denied** — ECR login expired (12 h); rerun the login command.
-- **502 from the API** — almost always the container failed to start; check
+- **Image push denied**: ECR login expired (12 h); rerun the login command.
+- **502 from the API**: almost always the container failed to start; check
   CloudWatch → log group `/aws/lambda/conformal-rul`.
-- **Why infra isn't applied by CI** — the deploy role deliberately can't touch
+- **Why infra isn't applied by CI**: the deploy role deliberately can't touch
   IAM/API Gateway/budgets. Infrastructure changes are a local, reviewed
   `terraform apply`; CI only ships application code. Widening that role is a
   choice, not an accident.
