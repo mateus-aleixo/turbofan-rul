@@ -25,6 +25,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t conformal-rul:ci .
+
+      # The image installs the package with --no-deps on top of a pinned,
+      # torch-free requirements set. That is easy to break from pyproject and the
+      # breakage is invisible until someone looks at a 2 GB image.
+      - name: Assert the image is torch-free
+        run: |
+          if docker run --rm conformal-rul:ci python -c "import torch" 2>/dev/null; then
+            echo "::error::torch reached the serving image" && exit 1
+          fi
+          echo "confirmed: no torch in the serving image"
+          docker image inspect conformal-rul:ci --format 'image size: {{.Size}} bytes'
+
       - name: smoke test the container
         run: |
           docker run -d --name smoke -p 8000:8000 conformal-rul:ci

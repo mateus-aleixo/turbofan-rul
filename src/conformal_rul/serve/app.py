@@ -51,6 +51,31 @@ class Bundle:
         self.pre = Preprocessor.from_json((model_dir / "preprocessor.json").read_text())
         self.conformal = ConformalRUL.from_json((model_dir / "conformal.json").read_text())
         self.manifest = json.loads((model_dir / "manifest.json").read_text())
+        # The measured counterpart to whatever the caller asks for. Optional so a
+        # registry exported before this file existed still serves.
+        report = model_dir / "coverage_report.json"
+        self.coverage_report: dict | None = (
+            json.loads(report.read_text()) if report.exists() else None
+        )
+
+    def measured(self, level: int, taxonomy: str) -> tuple[float | None, float | None]:
+        """Empirical coverage and mean width for one level and taxonomy."""
+        if not self.coverage_report:
+            return None, None
+        entry = self.coverage_report.get("coverages", {}).get(str(level), {}).get(taxonomy)
+        if not entry:
+            return None, None
+        return entry.get("coverage"), entry.get("width")
+
+    def measured_by_level(self, taxonomy: str) -> dict[str, float] | None:
+        if not self.coverage_report:
+            return None
+        out = {
+            level: tax[taxonomy]["coverage"]
+            for level, tax in self.coverage_report.get("coverages", {}).items()
+            if taxonomy in tax
+        }
+        return out or None
 
 
 @lru_cache(maxsize=8)
@@ -81,6 +106,7 @@ def models() -> list[ModelInfo]:
                 n_regimes=b.pre.n_regimes,
                 test_rmse=b.manifest["test"]["rmse"],
                 conformal_method=b.conformal.method,
+                measured_coverage=b.measured_by_level("band"),
             )
         )
     if not out:
@@ -106,10 +132,20 @@ def predict(req: PredictRequest) -> PredictResponse:
     point = float(np.clip(pred[0, 0], 0, b.pre.rul_cap))
     band = RUL_BAND_NAMES[int(rul_band(pred[:1, 0], b.pre.rul_cap)[0])]
 
+    measured, width = b.measured(req.coverage, req.taxonomy)
+    n_cal = (b.coverage_report or {}).get("n")
+
     return PredictResponse(
         rul_cycles=round(point, 1),
-        interval=Interval(lower=round(float(lo[0]), 1), upper=round(float(hi[0]), 1),
-                          coverage=req.coverage),
+        interval=Interval(
+            lower=round(float(lo[0]), 1),
+            upper=round(float(hi[0]), 1),
+            coverage_nominal=req.coverage,
+            coverage_measured=measured,
+            mean_width=round(width, 1) if width is not None else None,
+            taxonomy=req.taxonomy,
+            n_calibration=n_cal,
+        ),
         risk_band=band,
         operating_regime=int(last_regime[0]),
         subset=req.subset,

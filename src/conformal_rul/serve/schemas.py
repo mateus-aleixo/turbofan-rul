@@ -33,9 +33,30 @@ class PredictRequest(BaseModel):
 
 
 class Interval(BaseModel):
+    """The interval, and how well this configuration actually covered.
+
+    `coverage_nominal` is what the caller asked for. `coverage_measured` is what
+    that setting achieved on the held-out split, read from the calibration report
+    in the registry. They are not the same number and the gap is the point: at
+    nominal 90 the `band` taxonomy measures 0.89 on FD001, while `marginal`
+    measures 0.82. An API that returns only the target states an aspiration as a
+    result.
+    """
+
     lower: float
     upper: float
-    coverage: int
+    coverage_nominal: int = Field(..., description="Requested coverage level.")
+    coverage_measured: float | None = Field(
+        None, description="Empirical coverage of this level and taxonomy on the "
+        "held-out split. None if the registry predates the calibration report."
+    )
+    mean_width: float | None = Field(
+        None, description="Mean interval width in cycles at this setting."
+    )
+    taxonomy: str = Field(..., description="Mondrian grouping the threshold came from.")
+    n_calibration: int | None = Field(
+        None, description="Calibration set size behind the measured figure."
+    )
 
 
 class PredictResponse(BaseModel):
@@ -52,6 +73,10 @@ class PredictResponse(BaseModel):
 class ModelInfo(BaseModel):
     subset: str
     model: str
+    measured_coverage: dict[str, float] | None = Field(
+        None, description="Empirical coverage per nominal level, at the default "
+        "taxonomy, so the honest numbers are visible without a prediction."
+    )
     window: int
     rul_cap: int
     n_features: int
