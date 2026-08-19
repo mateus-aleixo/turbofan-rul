@@ -8,11 +8,18 @@ no downloads, matching the CI contract of the sibling repos.
 
 import numpy as np
 import pytest
-import torch
 
-from conformal_rul.config import QUANTILES, TrainConfig
-from conformal_rul.models.nets import build_net
-from conformal_rul.train import pinball_loss, predict_net, set_seed
+# The fast CI job installs .[dev,serve] on purpose: serving is torch-free and its
+# tests run against the committed models/ registry on onnxruntime alone. These
+# tests exercise the training path, so they need the train extra and skip without
+# it. The `train-tests` CI job installs it so they are actually run somewhere.
+pytest.importorskip("torch", reason="training path requires the train extra")
+
+import torch  # noqa: E402
+
+from conformal_rul.config import QUANTILES, TrainConfig  # noqa: E402
+from conformal_rul.models.nets import build_net  # noqa: E402
+from conformal_rul.train import pinball_loss, predict_net, set_seed  # noqa: E402
 
 N_FEATURES = 11
 WINDOW = 30

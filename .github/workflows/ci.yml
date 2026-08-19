@@ -20,6 +20,25 @@ jobs:
       - run: ruff check src tests scripts
       - run: pytest
 
+  train-tests:
+    name: training path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # The lint-test job stays torch-free, which is the whole point of the
+      # serving design. The training path still has to run somewhere, so it runs
+      # here, on CPU wheels, against random weights and synthetic windows.
+      - name: Install with the train extra (CPU torch)
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[train,dev]"
+      - name: Test the training and export path
+        run: pytest tests/test_train_export.py -v
+
   image:
     runs-on: ubuntu-latest
     steps:
