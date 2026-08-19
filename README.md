@@ -4,28 +4,33 @@
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-Probabilistic remaining-useful-life prediction for turbofan engines, with
-**distribution-free calibrated intervals** — because in predictive maintenance a
-point estimate without a trustworthy error bar invites you to either scrap a
-healthy machine or fly a failing one.
+Probabilistic remaining-useful-life (RUL) prediction for turbofan engines, with
+**distribution-free calibrated intervals**. In predictive maintenance, a point
+estimate without a trustworthy error bar invites one of two expensive mistakes:
+scrapping a healthy machine, or flying a failing one.
 
 ![Calibrated intervals on FD004](docs/figures/intervals_fd004.png)
 
-PyTorch sequence models trained from scratch on the NASA C-MAPSS benchmark,
-wrapped in **conformalized quantile regression** with **Mondrian (per-group)
-calibration**, exported to ONNX and served torch-free by a FastAPI service
-**running live on AWS Lambda**, provisioned with Terraform and deployed by
-OIDC-authenticated GitHub Actions.
+PyTorch sequence models trained from scratch on the NASA C-MAPSS benchmark, wrapped
+in **conformalized quantile regression** with **Mondrian (per-group) calibration**,
+exported to ONNX and served torch-free by a FastAPI service **running live on AWS
+Lambda**, provisioned with Terraform and deployed by OIDC-authenticated GitHub
+Actions.
 
-**Live demo**: `https://aao1ufi805.execute-api.eu-west-1.amazonaws.com` —
-try `GET /health`, `GET /models`, or the `POST /predict` example below.
-(Serverless: the first request after idle pays a few seconds of cold start;
-the API is deliberately throttled to 5 req/s.)
+## Live API
 
-### One idea, three modalities
+```
+https://aao1ufi805.execute-api.eu-west-1.amazonaws.com
+```
 
-This is the first of a series applying the same discipline — *a prediction without a
-trustworthy confidence statement is not a decision aid* — to different kinds of data:
+`GET /health`, `GET /models`, `POST /predict` (example below). The service is
+serverless, so the first request after an idle period pays a few seconds of cold
+start, and throughput is deliberately throttled to 5 req/s.
+
+## One idea, three modalities
+
+First of a series applying a single principle, *a prediction without a trustworthy
+confidence statement is not a decision aid*, to three different kinds of data:
 
 | repo | modality | the guarantee |
 |---|---|---|
@@ -33,15 +38,15 @@ trustworthy confidence statement is not a decision aid* — to different kinds o
 | [conformal-seg](https://github.com/mateus-aleixo/conformal-seg) | vision | defect masks bounding the missed-defect rate |
 | [conformal-rag](https://github.com/mateus-aleixo/conformal-rag) | language | selective QA that abstains at a calibrated error rate |
 
-Each one is standalone. Read together they make the same argument three times, and
-each surfaces a different limit of the method — `conformal-seg` shows a guarantee
+Each repo stands alone. Read together they make the same argument three times, and
+each one surfaces a different limit of the method: `conformal-seg` shows a guarantee
 holding while the output becomes useless, `conformal-rag` shows a stronger model
 making calibration *harder*.
 
-## Results in one table
+## Results
 
-Test RMSE (cycles) — full tables, NASA scores and coverage analysis in
-[docs/results.md](docs/results.md):
+Test RMSE in cycles. Full tables, NASA scores and coverage analysis in
+[docs/results.md](docs/results.md).
 
 | | FD001 | FD002 | FD003 | FD004 |
 |---|---|---|---|---|
@@ -49,26 +54,26 @@ Test RMSE (cycles) — full tables, NASA scores and coverage analysis in
 | LSTM | 14.03 | 15.03 | 12.97 | 15.01 |
 | Transformer | 13.71 | 14.70 | 13.04 | **14.27** |
 
-Two findings worth your attention:
+Two results worth highlighting:
 
-1. **The boosted-tree baseline wins 3 of 4 subsets.** Deep models only pay
-   their way on FD004 (6 operating regimes × 2 fault modes). If your deep
-   model beats a weak baseline, check the baseline before the architecture.
-2. **90 % intervals really cover ~90 %** (0.87–0.89 empirically, within
-   binomial noise of nominal), and Mondrian calibration by predicted-RUL band
-   makes them *adaptive*: 11–19 cycles wide when an engine is predicted
-   critical vs 36–45 when healthy — tightest exactly where the decision is
-   urgent.
+1. **The boosted-tree baseline wins 3 of the 4 subsets.** The deep models only pay
+   their way on FD004 (6 operating regimes by 2 fault modes). If a deep model beats a
+   weak baseline, check the baseline before crediting the architecture.
+2. **The 90% intervals really do cover about 90%** (0.87 to 0.89 empirically, within
+   binomial noise of nominal), and Mondrian calibration by predicted-RUL band makes
+   them *adaptive*: 11–19 cycles wide when an engine is predicted critical, against
+   36–45 when it is predicted healthy. They are tightest exactly where the
+   maintenance decision is urgent.
 
-## Why conformal, not dropout or ensembles
+## Why conformal rather than dropout or ensembles
 
-Split conformal / CQR give **finite-sample marginal coverage guarantees under
-exchangeability** — no Gaussian assumptions, no sampling at inference, one
-extra vector of calibration scores. Marginal coverage can still hide per-group
+Split conformal and CQR give **finite-sample marginal coverage guarantees under
+exchangeability**: no Gaussian assumptions, no sampling at inference, one extra
+vector of calibration scores. Marginal coverage can still hide per-group
 under-coverage, which is what the Mondrian layer (per operating regime, per
-predicted-RUL band) surfaces and fixes. Method details in
-[`src/conformal_rul/conformal.py`](src/conformal_rul/conformal.py) — including
-the finite-sample quantile correction and the small-group fallback.
+predicted-RUL band) surfaces and corrects. Method details, including the
+finite-sample quantile correction and the small-group fallback, are in
+[`src/conformal_rul/conformal.py`](src/conformal_rul/conformal.py).
 
 ## Quickstart
 
@@ -79,7 +84,7 @@ git clone https://github.com/mateus-aleixo/conformal-rul && cd conformal-rul
 docker compose up --build
 curl localhost:8000/health
 
-# or retrain everything from scratch (~5 min on a laptop RTX 3060)
+# or retrain everything from scratch (about 5 min on a laptop RTX 3060)
 pip install -e .[train,dev]
 python -m conformal_rul.data
 python -m conformal_rul.train --all
@@ -129,30 +134,30 @@ flowchart LR
     GH[GitHub Actions<br/>OIDC, no stored keys] -. build + deploy .-> ECR
 ```
 
-More in [docs/architecture.md](docs/architecture.md) ·
-deployment runbook in [docs/deploy.md](docs/deploy.md) ·
-[model card](docs/model-card.md).
+See [docs/architecture.md](docs/architecture.md), the deployment runbook in
+[docs/deploy.md](docs/deploy.md), and the [model card](docs/model-card.md).
 
 ## Design decisions
 
-- **Splits are by engine unit, never by window** — sliding windows from one
-  engine are near-duplicates; window-level splits leak and flatter every metric.
-- **Preprocessing and conformal state serialize to JSON** — serving needs
-  neither pickle nor scikit-learn nor torch; the 359 MB image cold-starts in
-  seconds.
-- **One container for laptop and Lambda** via the Lambda Web Adapter — no
-  Lambda-specific code path to drift from local behavior.
-- **The deploy role can ship code, not change infrastructure** — OIDC-scoped
-  to this repo's main branch and tags; ECR push + `UpdateFunctionCode` only.
-- **Honest numbers over leaderboard numbers** — fixed seed, default-ish
-  hyperparameters, the baseline reported where it wins.
+- **Splits are by engine unit, never by window.** Sliding windows drawn from one
+  engine are near-duplicates, so window-level splits leak and flatter every metric.
+- **Preprocessing and conformal state serialize to JSON.** Serving needs neither
+  pickle nor scikit-learn nor torch, and the 359 MB image cold-starts in seconds.
+- **One container for laptop and Lambda**, via the Lambda Web Adapter, so there is no
+  Lambda-specific code path to drift from local behaviour.
+- **The deploy role can ship code, not change infrastructure.** It is OIDC-scoped to
+  this repository's main branch and tags, and limited to ECR push plus
+  `UpdateFunctionCode`.
+- **Honest numbers over leaderboard numbers:** fixed seed, close to default
+  hyperparameters, and the baseline reported where it wins.
 
 ## Limitations
 
-Simulated data, per-subset models, approximate exchangeability at the
-benchmark's censored last windows — spelled out in the
-[model card](docs/model-card.md). Not a certified maintenance tool.
+Simulated data, per-subset models, and only approximate exchangeability at the
+benchmark's censored final windows. These are spelled out in the
+[model card](docs/model-card.md). This is a portfolio project, not a certified
+maintenance tool.
 
 ## License
 
-MIT © Mateus Aleixo
+MIT, Mateus Aleixo.
