@@ -1,7 +1,8 @@
 # Deploying to AWS
 
 From zero (no AWS account) to a live endpoint. One-time setup is ~30 minutes;
-after that every deploy is `git tag && git push --tags`.
+after that every deploy is `git tag && git push --tags`. The AWS resources keep
+the project's original name, `conformal-rul`.
 
 ## What it costs
 

@@ -1,6 +1,6 @@
-# conformal-rul
+# turbofan-rul
 
-[![ci](https://github.com/mateus-aleixo/conformal-rul/actions/workflows/ci.yml/badge.svg)](https://github.com/mateus-aleixo/conformal-rul/actions/workflows/ci.yml)
+[![ci](https://github.com/mateus-aleixo/turbofan-rul/actions/workflows/ci.yml/badge.svg)](https://github.com/mateus-aleixo/turbofan-rul/actions/workflows/ci.yml)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
@@ -27,21 +27,8 @@ https://aao1ufi805.execute-api.eu-west-1.amazonaws.com
 serverless, so the first request after an idle period pays a few seconds of cold
 start, and throughput is deliberately throttled to 5 req/s.
 
-## One idea, three modalities
-
-First of a series applying a single principle, *a prediction without a trustworthy
-confidence statement is not a decision aid*, to three different kinds of data:
-
-| repo | modality | the guarantee |
-|---|---|---|
-| **conformal-rul** | sensor sequences | RUL intervals with verified coverage, live on AWS Lambda |
-| [conformal-seg](https://github.com/mateus-aleixo/conformal-seg) | vision | defect masks bounding the missed-defect rate |
-| [conformal-rag](https://github.com/mateus-aleixo/conformal-rag) | language | selective QA that abstains at a calibrated error rate |
-
-Each repo stands alone. Read together they make the same argument three times, and
-each one surfaces a different limit of the method: `conformal-seg` shows a guarantee
-holding while the output becomes useless, `conformal-rag` shows a stronger model
-making calibration *harder*.
+The agent in [maintenance-qa-agent](https://github.com/mateus-aleixo/maintenance-qa-agent) calls `POST /predict`
+as one of its tools.
 
 ## Results
 
@@ -78,7 +65,7 @@ finite-sample quantile correction and the small-group fallback, are in
 ## Quickstart
 
 ```bash
-git clone https://github.com/mateus-aleixo/conformal-rul && cd conformal-rul
+git clone https://github.com/mateus-aleixo/turbofan-rul && cd turbofan-rul
 
 # serve the committed model registry (no GPU, no torch)
 docker compose up --build
