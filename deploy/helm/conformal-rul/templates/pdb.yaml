@@ -1,0 +1,16 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "conformal-rul.fullname" . }}
+  labels:
+    {{- include "conformal-rul.labels" . | nindent 4 }}
+spec:
+  # Guards voluntary disruption only: node drains, cluster upgrades, the
+  # autoscaler compacting nodes. A rolling update is governed by maxUnavailable
+  # on the Deployment, and a crash is governed by neither.
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "conformal-rul.selectorLabels" . | nindent 6 }}
+{{- end }}

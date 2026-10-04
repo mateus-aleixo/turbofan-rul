@@ -1,0 +1,126 @@
+# Defaults describe a small production deployment. deploy/kind/values.yaml
+# overrides only what a single-node CI cluster cannot honour.
+
+image:
+  repository: conformal-rul
+  tag: ""            # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+# Two, not one. A single replica cannot be updated without downtime whatever the
+# strategy says, because there is nothing to roll to.
+replicaCount: 2
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}    # e.g. eks.amazonaws.com/role-arn for IRSA
+
+service:
+  type: ClusterIP
+  port: 80
+  nodePort: null     # only read when type is NodePort
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: conformal-rul.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# The service holds ONNX sessions and a small registry in memory. It is CPU
+# bound per request and does not grow with traffic, so the limit exists to stop
+# one noisy pod starving a node, not because the process needs the headroom.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  # Scale up quickly, down slowly. Inference latency is what users feel; paying
+  # for a spare pod for two minutes is cheaper than a cold scale-up per burst.
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 0
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Probes are split three ways on purpose. Startup covers the ONNX session load
+# without making liveness lenient forever; readiness gates traffic; liveness only
+# restarts a process that is genuinely stuck.
+probes:
+  startup:
+    periodSeconds: 2
+    failureThreshold: 30
+  readiness:
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+  liveness:
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# kube-proxy removes a Terminating pod from the endpoint set asynchronously, so
+# a pod that exits the instant it is told to can still be sent requests. The
+# preStop sleep is the standard fix and is the difference between a clean
+# rolling update and a handful of connection resets.
+lifecycle:
+  preStopSleepSeconds: 5
+terminationGracePeriodSeconds: 30
+
+env:
+  MODEL_ROOT: /app/models
+  PORT: "8000"
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Single-node clusters (kind, minikube) cannot satisfy a hard spread, so the
+# constraint is advisory. On a real cluster it puts the replicas on separate
+# nodes, which is the only reason the PDB above means anything.
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: kubernetes.io/hostname
+  whenUnsatisfiable: ScheduleAnyway
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+tests:
+  # helm test payload: 35 cycles of the C-MAPSS column layout, same shape the
+  # container smoke test in ci.yml uses.
+  cycles: 35
+  subset: FD001
