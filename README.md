@@ -128,11 +128,22 @@ flowchart LR
     subgraph cloud [AWS - Terraform]
         L --> ECR[ECR] --> LAM[Lambda] --> GW[HTTP API Gateway]
     end
+    subgraph k8s [Kubernetes - Helm]
+        L --> DEP[Deployment<br/>2 replicas, HPA, PDB] --> SVC[Service + Ingress]
+    end
     GH[GitHub Actions<br/>OIDC, no stored keys] -. build + deploy .-> ECR
+    GH -. kind cluster, e2e .-> DEP
 ```
 
+The same image runs both ways. On Lambda the Web Adapter turns invocations into
+HTTP; on Kubernetes kubelet probes the same port. CI installs the chart on a kind
+cluster and then proves the two claims that matter: a rolling update drops no
+requests, and killing a pod drops no requests.
+
 See [docs/architecture.md](docs/architecture.md), the deployment runbook in
-[docs/deploy.md](docs/deploy.md), and the [model card](docs/model-card.md).
+[docs/deploy.md](docs/deploy.md), [docs/kubernetes.md](docs/kubernetes.md) for the
+chart and the Lambda-versus-Kubernetes argument, and the
+[model card](docs/model-card.md).
 
 ## Design decisions
 

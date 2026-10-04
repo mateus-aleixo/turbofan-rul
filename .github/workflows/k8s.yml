@@ -1,0 +1,117 @@
+name: k8s
+
+# The Helm chart is only worth anything if it is exercised. This job builds the
+# image, runs it on a real (single-node) cluster, and then asserts the two
+# properties the chart claims: a rolling update drops no requests, and losing a
+# pod drops no requests. Both run against a stable NodePort, not port-forward,
+# because port-forward binds to one pod and dies with it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deploy/**"
+      - "src/**"
+      - "models/**"
+      - "requirements/**"
+      - "Dockerfile"
+      - ".github/workflows/k8s.yml"
+  pull_request:
+    paths:
+      - "deploy/**"
+      - "src/**"
+      - "models/**"
+      - "requirements/**"
+      - "Dockerfile"
+      - ".github/workflows/k8s.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE: conformal-rul:ci
+  RELEASE: rul
+  ENDPOINT: http://localhost:30080
+
+jobs:
+  chart:
+    name: helm lint and template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - run: helm lint deploy/helm/conformal-rul
+      # Rendering with the production defaults keeps the HPA, Ingress and PDB
+      # paths covered even though the kind cluster below runs without them.
+      - name: Render the production values and validate against the API schema
+        run: |
+          helm template "$RELEASE" deploy/helm/conformal-rul \
+            --set ingress.enabled=true > /tmp/prod.yaml
+          helm template "$RELEASE" deploy/helm/conformal-rul \
+            -f deploy/kind/values.yaml > /tmp/kind.yaml
+          curl -sSLo /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp kubeconform
+          /tmp/kubeconform -strict -summary /tmp/prod.yaml /tmp/kind.yaml
+
+  e2e:
+    name: kind end to end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the serving image
+        run: docker build -t "$IMAGE" .
+
+      - uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: conformal-rul
+          config: deploy/kind/cluster.yaml
+
+      # kind nodes have their own containerd, so the locally built image has to
+      # be side-loaded. values.yaml sets pullPolicy Never to match.
+      - name: Load the image into the cluster
+        run: kind load docker-image "$IMAGE" --name conformal-rul
+
+      - name: Install the chart
+        run: |
+          helm install "$RELEASE" deploy/helm/conformal-rul \
+            -f deploy/kind/values.yaml --wait --timeout 5m
+          kubectl rollout status "deploy/$RELEASE-conformal-rul" --timeout=2m
+          kubectl get pods -o wide
+
+      - name: Smoke test through the NodePort
+        run: |
+          curl -sf "$ENDPOINT/health"
+          python - <<'EOF'
+          import json, os, urllib.request
+          base = os.environ["ENDPOINT"]
+          cycle = {f"setting_{i}": 0.0 for i in (1, 2, 3)}
+          cycle |= {f"s_{i:02d}": 0.5 for i in range(1, 22)}
+          body = json.dumps({"subset": "FD001", "cycles": [cycle] * 35}).encode()
+          req = urllib.request.Request(
+              base + "/predict", body, {"Content-Type": "application/json"}
+          )
+          out = json.load(urllib.request.urlopen(req, timeout=30))
+          assert 0 <= out["rul_cycles"] <= 125, out
+          assert out["interval"]["coverage_measured"] is not None, out
+          print("cluster predict OK:", out["rul_cycles"], out["interval"])
+          EOF
+
+      - name: A rolling update must not drop a request
+        run: bash deploy/scripts/no-downtime.sh rollout
+
+      - name: Losing a pod must not drop a request
+        run: bash deploy/scripts/no-downtime.sh kill-pod
+
+      - name: helm test
+        run: helm test "$RELEASE" --logs --timeout 3m
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get all -o wide || true
+          kubectl describe pods || true
+          kubectl logs -l app.kubernetes.io/instance="$RELEASE" --tail=200 --all-containers || true
+          kubectl get events --sort-by=.lastTimestamp | tail -40 || true

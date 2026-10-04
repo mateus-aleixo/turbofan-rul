@@ -1,0 +1,31 @@
+# Overrides for the single-node kind cluster used locally and in CI.
+#
+# Only three things change against the production defaults, and each is a
+# property of the cluster rather than of the service: there is no ingress
+# controller, there is no metrics-server behind the HPA, and there is one node.
+
+image:
+  repository: conformal-rul
+  tag: ci
+  # The image is side-loaded with `kind load docker-image`, so pulling would
+  # fail and Never makes that failure loud instead of a slow ImagePullBackOff.
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  nodePort: 30080
+
+# metrics-server is not installed in the test cluster, so an HPA would sit in
+# an unknown state and add nothing. The replica count is fixed instead, and the
+# HPA template is still covered by `helm template` and the lint job.
+autoscaling:
+  enabled: false
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

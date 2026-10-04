@@ -1,0 +1,15 @@
+apiVersion: v2
+name: conformal-rul
+description: >-
+  The conformal-rul inference service on Kubernetes: the same torch-free image
+  that runs on AWS Lambda, deployed as a rolling, autoscaled Deployment.
+type: application
+# Chart version moves with the deployment surface, appVersion with the service.
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.26.0-0"
+home: https://github.com/mateus-aleixo/conformal-rul
+sources:
+  - https://github.com/mateus-aleixo/conformal-rul
+maintainers:
+  - name: Mateus Aleixo

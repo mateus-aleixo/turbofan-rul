@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "conformal-rul.fullname" . }}-test-predict
+  labels:
+    {{- include "conformal-rul.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    # Deliberately NOT hook-succeeded: helm deletes the pod the moment it passes,
+    # and then `helm test --logs` fails with "pods not found". The pod is cleaned
+    # up before the next run instead, so its output survives long enough to read.
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  # Reuses the service image rather than pulling curl or busybox: the test then
+  # needs no registry access, which is what makes `helm test` work unchanged on
+  # an air-gapped or offline cluster.
+  containers:
+    - name: predict
+      image: {{ include "conformal-rul.image" . }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command: ["python", "-c"]
+      args:
+        - |
+          import json, sys, urllib.request
+          base = "http://{{ include "conformal-rul.fullname" . }}:{{ .Values.service.port }}"
+          health = json.load(urllib.request.urlopen(base + "/health", timeout=10))
+          print("health:", health)
+          cycle = {f"setting_{i}": 0.0 for i in (1, 2, 3)}
+          cycle |= {f"s_{i:02d}": 0.5 for i in range(1, 22)}
+          body = json.dumps({
+              "subset": "{{ .Values.tests.subset }}",
+              "cycles": [cycle] * {{ .Values.tests.cycles }},
+          }).encode()
+          req = urllib.request.Request(
+              base + "/predict", body, {"Content-Type": "application/json"}
+          )
+          out = json.load(urllib.request.urlopen(req, timeout=30))
+          assert 0 <= out["rul_cycles"] <= 125, out
+          iv = out["interval"]
+          assert iv["lower"] <= iv["upper"], out
+          # The service must report what the setting actually achieved, not only
+          # what was asked for. This is the contract the whole project exists for.
+          assert iv["coverage_nominal"] == 90, out
+          assert iv["coverage_measured"] is not None, out
+          print("predict OK:", out["rul_cycles"], iv)

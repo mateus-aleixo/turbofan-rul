@@ -1,0 +1,14 @@
+# Single-node cluster for local runs and CI.
+#
+# The NodePort is mapped straight to the host so a load generator can hold one
+# stable address across a rolling update. `kubectl port-forward` cannot be used
+# for that test: it binds to a single pod and dies with it, which would report
+# the very downtime the test exists to disprove.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP
