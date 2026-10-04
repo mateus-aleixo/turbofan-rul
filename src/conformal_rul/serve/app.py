@@ -27,7 +27,7 @@ from .schemas import Interval, ModelInfo, PredictRequest, PredictResponse
 MODEL_ROOT = Path(os.environ.get("MODEL_ROOT", "models"))
 
 app = FastAPI(
-    title="conformal-rul",
+    title="turbofan-rul",
     version=__version__,
     description="Remaining-useful-life prediction with conformal intervals "
     "on the NASA C-MAPSS benchmark.",
