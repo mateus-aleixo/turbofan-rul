@@ -4,18 +4,19 @@
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-Probabilistic remaining-useful-life (RUL) prediction for turbofan engines, with
-**distribution-free calibrated intervals**. In predictive maintenance, a point
-estimate without a trustworthy error bar invites one of two expensive mistakes:
-scrapping a healthy machine, or flying a failing one.
+Remaining-useful-life (RUL) prediction for turbofan engines, with prediction intervals
+that are calibrated without distributional assumptions. In predictive maintenance, a
+point estimate without a reliable error bar can lead to two expensive mistakes:
+replacing an engine that is still healthy, or keeping one in service that is about to
+fail.
 
 ![Calibrated intervals on FD004](docs/figures/intervals_fd004.png)
 
-PyTorch sequence models trained from scratch on the NASA C-MAPSS benchmark, wrapped
-in **conformalized quantile regression** with **Mondrian (per-group) calibration**,
-exported to ONNX and served torch-free by a FastAPI service **running live on AWS
-Lambda**, provisioned with Terraform and deployed by OIDC-authenticated GitHub
-Actions.
+The models are PyTorch sequence models trained from scratch on NASA's C-MAPSS
+benchmark, wrapped in conformalized quantile regression with Mondrian (per-group)
+calibration. They are exported to ONNX and served without PyTorch by a FastAPI service
+that runs live on AWS Lambda. The infrastructure is provisioned with Terraform, and
+GitHub Actions deploys it, authenticated through OIDC.
 
 ## Live API
 
@@ -23,16 +24,16 @@ Actions.
 https://aao1ufi805.execute-api.eu-west-1.amazonaws.com
 ```
 
-`GET /health`, `GET /models`, `POST /predict` (example below). The service is
-serverless, so the first request after an idle period pays a few seconds of cold
-start, and throughput is deliberately throttled to 5 req/s.
+`GET /health`, `GET /models` and `POST /predict` (example below). The service is
+serverless, so the first request after an idle period waits a few seconds for a cold
+start, and throughput is limited to 5 requests per second.
 
-The agent in [maintenance-qa-agent](https://github.com/mateus-aleixo/maintenance-qa-agent) calls `POST /predict`
-as one of its tools.
+The agent in [maintenance-qa-agent](https://github.com/mateus-aleixo/maintenance-qa-agent)
+calls `POST /predict` as one of its tools.
 
 ## Results
 
-Test RMSE in cycles. Full tables, NASA scores and coverage analysis in
+Test RMSE in cycles. Full tables, NASA scores and the coverage analysis are in
 [docs/results.md](docs/results.md).
 
 | | FD001 | FD002 | FD003 | FD004 |
@@ -41,25 +42,24 @@ Test RMSE in cycles. Full tables, NASA scores and coverage analysis in
 | LSTM | 14.03 | 15.03 | 12.97 | 15.01 |
 | Transformer | 13.71 | 14.70 | 13.04 | **14.27** |
 
-Two results worth highlighting:
+Two results stand out:
 
-1. **The boosted-tree baseline wins 3 of the 4 subsets.** The deep models only pay
-   their way on FD004 (6 operating regimes by 2 fault modes). If a deep model beats a
-   weak baseline, check the baseline before crediting the architecture.
-2. **The 90% intervals really do cover about 90%** (0.87 to 0.89 empirically, within
-   binomial noise of nominal), and Mondrian calibration by predicted-RUL band makes
-   them *adaptive*: 11–19 cycles wide when an engine is predicted critical, against
-   36–45 when it is predicted healthy. They are tightest exactly where the
-   maintenance decision is urgent.
+1. **The gradient-boosted baseline wins on 3 of the 4 subsets.** The deep models are only
+   better on FD004, the most complex subset, with 6 operating regimes and 2 fault modes.
+2. **The 90% intervals cover about 90% of test cases** (0.87 to 0.89 measured, within
+   binomial noise of the nominal level). Mondrian calibration by predicted-RUL band makes
+   them adaptive: 11 to 19 cycles wide when an engine is predicted to be close to failure,
+   and 36 to 45 cycles when it is predicted to be healthy. They are narrowest where the
+   maintenance decision is most urgent.
 
-## Why conformal rather than dropout or ensembles
+## Why conformal prediction
 
-Split conformal and CQR give **finite-sample marginal coverage guarantees under
-exchangeability**: no Gaussian assumptions, no sampling at inference, one extra
-vector of calibration scores. Marginal coverage can still hide per-group
-under-coverage, which is what the Mondrian layer (per operating regime, per
-predicted-RUL band) surfaces and corrects. Method details, including the
-finite-sample quantile correction and the small-group fallback, are in
+Split conformal prediction and CQR give finite-sample marginal coverage guarantees under
+exchangeability. They need no Gaussian assumptions and no sampling at inference time, and
+only add one vector of calibration scores. Marginal coverage can still hide under-coverage
+in some groups, and the Mondrian layer (per operating regime and per predicted-RUL band)
+measures and corrects that. Method details, including the finite-sample quantile
+correction and the fallback for small groups, are in
 [`src/conformal_rul/conformal.py`](src/conformal_rul/conformal.py).
 
 ## Quickstart
@@ -99,72 +99,72 @@ curl -X POST localhost:8000/predict -H "Content-Type: application/json" \
  "model": "transformer", "n_cycles_used": 1, "padded": true}
 ```
 
-`coverage_nominal` is what you asked for; `coverage_measured` is what that setting
-achieved on the held-out split. They are not the same number, and the gap is the
-point. The taxonomy matters too: on FD001 at nominal 90, `band` measures 0.89 while
-`marginal` measures 0.82, so a service that returned only the request would hide an
-under-coverage it lets you select. `GET /models` reports the measured figures per
-level without sending any data.
+`coverage_nominal` is the coverage you asked for, and `coverage_measured` is what that
+setting achieved on the held-out split. The two can differ, and the service reports both
+so that the difference is visible. The grouping matters too: on FD001 at a nominal 90%,
+`band` calibration measures 0.89 while `marginal` measures 0.82, so a service that only
+echoed the requested level would hide the under-coverage of one of the options it
+offers. `GET /models` reports the measured figures for each level without any data being
+sent.
 
-Interactive docs at `localhost:8000/docs`.
+Interactive docs are at `localhost:8000/docs`.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph training [GPU training - PyTorch]
+    subgraph training [GPU training, PyTorch]
         D[C-MAPSS<br/>download + windows] --> M[LSTM / Transformer<br/>mean + 7 quantile heads]
         D --> G[LightGBM baseline]
         M --> C[CQR + Mondrian<br/>calibration]
         G --> C
         M -- parity-checked --> O[ONNX export]
     end
-    subgraph serving [Serving - torch-free]
+    subgraph serving [Serving, without torch]
         O --> R[models/ registry<br/>ONNX + JSON state]
         C --> R
         R --> A[FastAPI + onnxruntime]
         A --> L[Docker image<br/>uvicorn + Lambda Web Adapter]
     end
-    subgraph cloud [AWS - Terraform]
+    subgraph cloud [AWS, with Terraform]
         L --> ECR[ECR] --> LAM[Lambda] --> GW[HTTP API Gateway]
     end
-    subgraph k8s [Kubernetes - Helm]
+    subgraph k8s [Kubernetes, with Helm]
         L --> DEP[Deployment<br/>2 replicas, HPA, PDB] --> SVC[Service + Ingress]
     end
     GH[GitHub Actions<br/>OIDC, no stored keys] -. build + deploy .-> ECR
     GH -. kind cluster, e2e .-> DEP
 ```
 
-The same image runs both ways. On Lambda the Web Adapter turns invocations into
-HTTP; on Kubernetes kubelet probes the same port. CI installs the chart on a kind
-cluster and then proves the two claims that matter: a rolling update drops no
-requests, and killing a pod drops no requests.
+The same image runs in both places. On Lambda, the Web Adapter turns invocations into
+HTTP requests, and on Kubernetes the kubelet probes the same port. CI installs the Helm
+chart on a kind cluster and checks two things: a rolling update drops no requests, and
+killing a pod drops no requests.
 
 See [docs/architecture.md](docs/architecture.md), the deployment runbook in
-[docs/deploy.md](docs/deploy.md), [docs/kubernetes.md](docs/kubernetes.md) for the
-chart and the Lambda-versus-Kubernetes argument, and the
-[model card](docs/model-card.md).
+[docs/deploy.md](docs/deploy.md), [docs/kubernetes.md](docs/kubernetes.md) for the chart
+and the comparison of Lambda and Kubernetes, and the [model card](docs/model-card.md).
 
 ## Design decisions
 
-- **Splits are by engine unit, never by window.** Sliding windows drawn from one
-  engine are near-duplicates, so window-level splits leak and flatter every metric.
-- **Preprocessing and conformal state serialize to JSON.** Serving needs neither
-  pickle nor scikit-learn nor torch, and the 359 MB image cold-starts in seconds.
-- **One container for laptop and Lambda**, via the Lambda Web Adapter, so there is no
-  Lambda-specific code path to drift from local behaviour.
-- **The deploy role can ship code, not change infrastructure.** It is OIDC-scoped to
-  this repository's main branch and tags, and limited to ECR push plus
-  `UpdateFunctionCode`.
-- **Honest numbers over leaderboard numbers:** fixed seed, close to default
-  hyperparameters, and the baseline reported where it wins.
+- **Splits by engine unit, never by window.** Sliding windows from one engine are
+  near-duplicates, so splitting by window leaks information and inflates every metric.
+- **Preprocessing and conformal state stored as JSON.** Serving needs no pickle,
+  scikit-learn or PyTorch, and the 359 MB image starts cold in a few seconds.
+- **One container for the laptop and for Lambda**, through the Lambda Web Adapter, so
+  there is no Lambda-specific code path that could behave differently from the local one.
+- **A deploy role that can only ship code.** It is scoped through OIDC to this
+  repository's main branch and tags, and limited to pushing to ECR and calling
+  `UpdateFunctionCode`, so it cannot change the infrastructure.
+- **One fixed seed and near-default hyperparameters**, with the baseline reported on the
+  subsets where it is better.
 
 ## Limitations
 
-Simulated data, per-subset models, and only approximate exchangeability at the
-benchmark's censored final windows. These are spelled out in the
-[model card](docs/model-card.md). This is a portfolio project, not a certified
-maintenance tool.
+The data is simulated, there is one model per subset, and exchangeability only holds
+approximately at the benchmark's censored final windows. The
+[model card](docs/model-card.md) covers these in detail. This is a portfolio project and
+has not been certified as a maintenance tool.
 
 ## License
 
