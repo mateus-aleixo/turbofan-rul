@@ -81,7 +81,7 @@ def fig_intervals(subset: str = "FD004") -> None:
     ax.set_ylim(0, cal.rul_cap * 1.04)
     ax.grid(axis="y")
     ax.legend(frameon=False, labelcolor=INK2, loc="upper right", fontsize=8.5)
-    _title(ax, f"Calibrated RUL intervals on {subset} — every engine gets an honest error bar")
+    _title(ax, f"Calibrated RUL intervals on {subset}: every test engine gets a 90 % interval")
     fig.savefig(OUT / f"intervals_{subset.lower()}.png", dpi=150)
     plt.close(fig)
 
@@ -108,7 +108,7 @@ def fig_coverage() -> None:
     fig.legend(frameon=False, labelcolor=INK2, loc="lower right",
                bbox_to_anchor=(0.995, 0.13), fontsize=8.5, title="calibration",
                title_fontsize=8.5)
-    fig.suptitle("Test coverage vs nominal — serving model per subset",
+    fig.suptitle("Test coverage vs nominal, serving model per subset",
                  x=0.005, ha="left", color=INK, fontsize=10, fontweight="bold")
     fig.savefig(OUT / "coverage.png", dpi=150)
     plt.close(fig)
@@ -130,7 +130,7 @@ def fig_rmse() -> None:
     ax.set_axisbelow(True)
     ax.legend(frameon=False, labelcolor=INK2, ncols=3, loc="upper left", fontsize=8.5)
     ax.set_ylim(0, 18)
-    _title(ax, "Point accuracy by subset — the boosted baseline is hard to beat")
+    _title(ax, "Point accuracy by subset: the boosted baseline is hard to beat")
     fig.savefig(OUT / "rmse.png", dpi=150)
     plt.close(fig)
 
