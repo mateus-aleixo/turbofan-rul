@@ -61,8 +61,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The same stand-in for the Lambda adapter as in ci.yml: the cluster never runs it,
+      # and anonymous pulls of it from ECR Public fail on shared runners.
+      - name: Stand-in for the Lambda adapter
+        run: |
+          mkdir -p /tmp/adapter && touch /tmp/adapter/lambda-adapter
+          printf 'FROM scratch\nCOPY lambda-adapter /lambda-adapter\n' | docker build -t lambda-adapter:ci -f - /tmp/adapter
+
       - name: Build the serving image
-        run: docker build -t "$IMAGE" .
+        run: docker build --build-arg LAMBDA_ADAPTER_IMAGE=lambda-adapter:ci -t "$IMAGE" .
 
       - uses: helm/kind-action@v1.10.0
         with:
