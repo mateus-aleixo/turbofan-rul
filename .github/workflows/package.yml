@@ -1,0 +1,65 @@
+name: package
+
+# The serving image on the GitHub Container Registry, so the API runs anywhere:
+#   docker run --rm -p 8000:8000 ghcr.io/mateus-aleixo/turbofan-rul
+# then open http://localhost:8000/docs. It is the image deploy.yml ships to Lambda, built with the
+# empty stand-in for the Lambda adapter that CI uses: the adapter only runs on Lambda, and
+# anonymous pulls of it from ECR Public fail on shared runners. No AWS access is needed here.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stand-in for the Lambda adapter
+        run: |
+          mkdir -p /tmp/adapter && touch /tmp/adapter/lambda-adapter
+          printf 'FROM scratch\nCOPY lambda-adapter /lambda-adapter\n' | docker build -t lambda-adapter:ci -f - /tmp/adapter
+
+      - name: Build
+        run: |
+          docker build --build-arg LAMBDA_ADAPTER_IMAGE=lambda-adapter:ci \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            --label "org.opencontainers.image.description=Remaining-useful-life API for the NASA C-MAPSS turbofans, with conformal intervals, on FastAPI and ONNX Runtime. Run with -p 8000:8000 and open /docs." \
+            -t api .
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name smoke -p 8000:8000 api
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:8000/health && break
+            sleep 1
+          done
+          python3 - <<'EOF'
+          import json, urllib.request
+          cycle = {f"setting_{i}": 0.0 for i in (1, 2, 3)}
+          cycle |= {f"s_{i:02d}": 0.5 for i in range(1, 22)}
+          body = json.dumps({"subset": "FD001", "cycles": [cycle] * 35}).encode()
+          req = urllib.request.Request(
+              "http://localhost:8000/predict", body, {"Content-Type": "application/json"}
+          )
+          out = json.load(urllib.request.urlopen(req))
+          assert 0 <= out["rul_cycles"] <= 125, out
+          assert out["interval"]["lower"] <= out["interval"]["upper"], out
+          print("container predict OK:", out["rul_cycles"], out["interval"])
+          EOF
+          docker rm -f smoke
+
+      - name: Push
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="sha-${GITHUB_SHA::12}"; fi
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for t in "$VERSION" latest; do
+            docker tag api "$IMAGE:$t" && docker push "$IMAGE:$t"
+          done
